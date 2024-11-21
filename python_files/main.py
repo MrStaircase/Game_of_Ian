@@ -71,6 +71,7 @@ class Board:
 
     def place_entity(self, entity):
         assert(isinstance(entity, Entity))
+        assert(entity.position not in self.position_dict.keys())
         self.position_dict[entity.position] = entity
         if(isinstance(entity, Enemy)):
             self.enemies.append(entity)
@@ -97,6 +98,13 @@ class Board:
         if query_request[0] == "hp":
             return self.position_dict[query_request[1]].get_hp()
     
+    def move_entity(self, from_postion: tuple[int, int], to_potiosion: tuple[int, int]) -> None:
+        assert(from_postion in self.position_dict.keys())
+        assert(to_potiosion not in self.position_dict.keys())
+        entity = self.position_dict.pop(from_postion)
+        entity.position = to_potiosion
+        self.position_dict[to_potiosion] = entity
+
     def board_command(self, command):
         assert(isinstance(command, tuple))
         assert(len(command) == 3)
@@ -113,26 +121,75 @@ class Board:
             entity = self.position_dict.pop(command[1])
             entity.position = command[2]
             self.position_dict[command[2]] = entity
+        
+    def place_command(self, entity, position):
+        assert(isinstance(entity, Entity))
+        assert(isinstance(position, tuple))
+        assert(isinstance(position[0], int))
+        assert(isinstance(position[1], int))
+        assert(position not in self.position_dict.keys())
+        self.position_dict[position] = entity
+
+class Command_Parser:
+    def pass_command(board: Board, command: str):
+        if command == "":
+            return
+        command_arguments = [item for item in command.split(" ") if item != ""]
+        command_type = command_arguments[0]
+        if command_type == "move":
+            assert len(command_arguments) == 5
+            board.move_entity((int(command_arguments[1]), int(command_arguments[2])), (int(command_arguments[3]), int(command_arguments[4])))
+            board.print_board()
+        elif command_type == "place":
+            assert len(command_arguments) == 6
+            if command_arguments[1] == "player":
+                board.place_entity(Playable_Character(character=command_arguments[2], hp=command_arguments[3], position=(int(command_arguments[4]), int(command_arguments[5]))))
+                print("playable character placement successful")
+                board.print_board()
+            elif command_arguments[1] == "enemy":
+                board.place_entity(Enemy(character=command_arguments[2], hp=command_arguments[3], position=(int(command_arguments[4]), int(command_arguments[5]))))
+                print("enemy placement successful")
+                board.print_board()
+            else:
+                assert False, "unknowned place entity type"
+        elif command_type == "hp":
+            assert len(command_arguments) == 3
+            position = (int(command_arguments[1]), int(command_arguments[2]))
+            if position in board.position_dict.keys():
+                print(board.get_info(("hp", position)))
+            else:
+                print("hp query failure")
+        else:
+            assert False, "unknowned command"
+
 
 class game:
     def get_xy_input():
         temp_input = input()
         return temp_input.split(" ")[0], int(temp_input.split(" ")[1]), int(temp_input.split(" ")[2])
 
+def get_input() -> tuple:
+    input_string = input()
+    input_arguments = input_string.split(" ")
+    if len(input_arguments) == 3:
+        return (input_arguments[0], (input_arguments[1], input_arguments[2]))
+    elif len(input_arguments) == 5:
+        return (input_arguments[0], (input_arguments[1], input_arguments[2]), (input_arguments[3], input_arguments[4]))
+    return ()
 
 def test(x : int) -> str:
     return str(x)+"1"
 
 def main():
     board = Board(size=9)
-    board.place_entity(Playable_Character(character="1", hp=5, position=(1, 3)))
-    board.place_entity(Playable_Character(character="2", hp=7, position=(4, 5)))
-    board.place_entity(Enemy(character="9", hp=3))
-    board.place_entity(Enemy(character="8", hp=2, position=(8, 8)))
     board.print_board()
-    print(board.get_info(("hp", (8, 8))))
-    board.board_command(("move", (1, 3), (4, 6)))
-    board.print_board()
+    input_str: str = ""
+    while input_str != "stop":
+        try:
+            Command_Parser.pass_command(board, input_str)
+        except AssertionError as e:
+            print(e)
+        input_str = input()
 
 
 main()
