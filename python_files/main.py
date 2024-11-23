@@ -166,7 +166,6 @@ class Command_Parser:
         from_position: tuple[int, int] = (int(command_arguments[0]), int(command_arguments[1]))
         to_position: tuple[int, int] = (int(command_arguments[2]), int(command_arguments[3]))
         board.move_entity(from_position, to_position)
-        board.print_board()
 
     def place_command_slow(board: Board) -> None:
         pass
@@ -179,7 +178,6 @@ class Command_Parser:
         entity_id: int = int(command_arguments[0])
         position: tuple[int, int] = (int(command_arguments[1]), int(command_arguments[2]))
         board.place_entity(Game_Inventory.get_entity(entity_id), position)
-        board.print_board()
 
     def info_command_slow(board: Board) -> None:
         pass
@@ -209,10 +207,10 @@ class Command_Parser:
 
     def create_command(command_arguments: list[str]) -> None:
         assert len(command_arguments) > 0, f"create command expected at least 1 argument ({len(command_arguments)} were given)"
-        create_type: str = command_arguments[0].lower()
+        create_type: str = command_arguments[0].lower().strip()
         if create_type == "entity":
             assert len(command_arguments) == 4, f"create entity command expected 4 arguments ({len(command_arguments)} were given)"
-            entity_type: str = command_arguments[1].lower()
+            entity_type: str = command_arguments[1].lower().strip()
             entity_character: str = command_arguments[2]
             entity_hp: int = int(command_arguments[3])
             entity: Entity
@@ -223,7 +221,7 @@ class Command_Parser:
             Game_Inventory.add_entity(entity)
         elif create_type == "item":
             assert len(command_arguments) > 1, f"create item command expected at least 2 arguments ({len(command_arguments)} were given)"
-            item_type: str = command_arguments[1].lower()
+            item_type: str = command_arguments[1].lower().strip()
             item: Item
             if item_type == "weapon":
                 assert len(command_arguments) == 5, f"create item weapon command expected 5 arguments ({len(command_arguments)} were given)"
@@ -276,6 +274,9 @@ class Command_Parser:
         item_index: int = int(command_arguments[1])
         entity.equip_item(item_index)
 
+    def print_command(board: Board, command_arguments: list[str]) -> None:
+        board.print_board()
+
     def help_command(command_arguments: list[str]) -> None:
         print("""Available Commands:
               \tattack from_position_x from_position_y to_position_x to_position_x
@@ -288,13 +289,14 @@ class Command_Parser:
               \titems [entity_id]
               \tgive entity_id item_id
               \tequip entity_id item_index
+              \tprint
               \thelp""")
 
     def pass_command(board: Board, command: str) -> None:
-        if command == "":
+        if command.strip() == "":
             return
         command_arguments: list[str] = [item for item in command.split(" ") if item != ""]
-        command_type: str = command_arguments[0].lower()
+        command_type: str = command_arguments[0].lower().strip()
         if command_type == "help":
             Command_Parser.help_command(command_arguments[1:])
         elif command_type == "move":
@@ -305,6 +307,8 @@ class Command_Parser:
             Command_Parser.info_command(board, command_arguments[1:])
         elif command_type == "attack":
             Command_Parser.attack_command(board, command_arguments[1:])
+        elif command_type == "print":
+            Command_Parser.print_command(board, command_arguments[1:])
         elif command_type == "create":
             Command_Parser.create_command(command_arguments[1:])
         elif command_type == "entities":
@@ -316,7 +320,9 @@ class Command_Parser:
         elif command_type == "equip":
             Command_Parser.equip_command(command_arguments[1:])
         else:
-            assert False, "unknowned command"
+            for letter in command_type:
+                print(1, letter)
+            assert False, f"unknowned command: {command_type}"
 
 def distance(from_position: tuple[int, int], to_position: tuple[int, int]) -> int:
     return abs(from_position[0] - to_position[0]) + abs(from_position[1] - to_position[1])
@@ -360,14 +366,12 @@ class Game_Inventory:
         Game_Inventory.print_all_items()
 
 def main():
-    board: Board = Board(size=9)
-    board.print_board()
-    input_str: str = ""
-    while input_str != "stop":
-        try:
-            Command_Parser.pass_command(board, input_str)
-        except AssertionError as e:
-            print(e)
-        input_str = input()
+    with open("python_files/test_input.txt", "r") as file:
+        board: Board = Board(size=9)
+        for line in file:
+            try:
+                Command_Parser.pass_command(board, line)
+            except AssertionError as e:
+                print(e)
 
 main()
