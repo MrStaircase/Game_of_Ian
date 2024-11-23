@@ -9,56 +9,109 @@ class Entity:
     def get_hp(self) -> int:
         return self.hp
 
-    def deal_damage(self, damage: int) -> None:
-        assert damage >= 0, "Cannot receive negative damage"
-        self.hp = max(self.hp - damage, 0)
+    def deal_damage(self, raw_damage: int, armor_pen: int = 0) -> None:
+        assert raw_damage >= 0, "Cannot receive negative damage"
+        final_damage: int = max(raw_damage - (self.get_armor() - armor_pen), 0) + armor_pen
+        self.hp = max(self.hp - final_damage, 0)
     
     def attack(self, target: "Entity", distance: int) -> None:
         pass
 
+    def get_armor(self) -> int:
+        pass
+
 class Enemy(Entity):
-    def __init__(self, character= "E", hp = 0):
+    def __init__(self, character:str = "E", hp: int = 0, damage: int = 1, armor: int = 0):
         super().__init__(character=character, hp=hp)
+        self.damage: int = damage
+        self.armor: int = armor
     
     def __str__(self) -> str:
         return "enemy: " + super().__str__()
     
     def attack(self, target: Entity, distance: int) -> None:
         assert isinstance(target, Entity), "Target must be an entity"
-        print("[debug] enemy attack")
+        target.deal_damage(self.damage)
+    
+    def get_armor(self) -> int:
+        return self.armor
 
 class Playable_Character(Entity):
-    def __init__(self, character= "P", hp = 0, role = "fighter"):
+    def __init__(self, character: str = "P", hp: int = 0, role: str = "fighter"):
         super().__init__(character=character, hp=hp)
         self.role: str = role
-        self.items: list[Item]
+        self.items: list[Item] = []
         self.selected_weapon: Weapon = Weapon()
+        self.selected_armor: Armor = Armor()
 
     def __str__(self) -> str:
-        return "playable_character: " + super().__str__()
+        return f"playable_character: {super().__str__()}, selected {self.selected_weapon}"
     
+    def add_item(self, item: "Item") -> None:
+        self.items.append(item)
+
+    def get_items(self) -> list["Item"]:
+        return [str(item) for item in self.items]
+
+    def select_weapon(self, weapon: "Weapon") -> None:
+        self.selected_weapon = weapon
+
+    def select_armor(self, armor: "Armor") -> None:
+        self.selected_armor = armor
+
+    def equip_item(self, index: int) -> None:
+        assert -1 <= index < len(self.items), f"Must select an item index within the range {-1} and {len(self.items) - 1}"
+        if index == -1:
+            self.select_weapon(Weapon())
+            self.select_armor(Armor())
+            return
+        item: Item = self.items[index]
+        if isinstance(item, Weapon):
+            self.select_weapon(item)
+        elif isinstance(item, Armor):
+            self.select_armor(item)
+
     def attack(self, target: Entity, distance: int) -> None:
         assert isinstance(target, Entity), "Target must be an entity"
         range: int
         damage: int
-        range, damage = self.selected_weapon.get_stats()
+        damage, range = self.selected_weapon.get_stats()
         assert distance <= range, "Target out of range"
         target.deal_damage(damage)
-        print("[debug] player attack")
+
+    def get_armor(self) -> int:
+        return self.selected_armor.get_stats()
 
 class Item:
     def __init__(self, name = "item"):
         self.name: str = name
 
+    def __str__(self) -> str:
+        return self.name
+
 class Weapon(Item):
-    def __init__(self, name="item", damage = 1, range = 1):
+    def __init__(self, name="weapon", damage = 1, range = 1):
         assert range >= 0, "Weapons range must be non-negative"
         super().__init__(name)
         self.damage: int = damage
         self.range: int = range
     
+    def __str__(self):
+        return f"weapon: {super().__str__()}, damage: {self.damage}, range: {self.range}"
+
     def get_stats(self) -> tuple[int, int]:
         return self.damage, self.range
+
+class Armor(Item):
+    def __init__(self, name="armor", armor_rating = 0):
+        super().__init__(name)
+        self.armor_rating: int = armor_rating
+    
+    def __str__(self):
+        return f"armor: {super().__str__()}, armor rating: {self.armor_rating}"
+
+    def get_stats(self) -> int:
+        return self.armor_rating
 
 class Board:
     def __init__(self, size:int  = 9):
@@ -102,50 +155,51 @@ class Board:
         self.position_dict[attacker_position].attack(self.position_dict[target_position], distance(attacker_position, target_position))
 
 class Command_Parser:
-    def move_command_slow(board: Board):
+    def move_command_slow(board: Board) -> None:
         pass
 
     def move_command(board: Board, command_arguments: list[str]) -> None:
-        assert len(command_arguments) == 4, f"move command expected 4 arguments ({len(command_arguments)} were given)"
+        assert len(command_arguments) == 4 or len(command_arguments) == 0,\
+            f"move command expected 0 or 4 arguments ({len(command_arguments)} were given)"
+        if len(command_arguments) == 0:
+            return Command_Parser.move_command_slow(board)
         from_position: tuple[int, int] = (int(command_arguments[0]), int(command_arguments[1]))
         to_position: tuple[int, int] = (int(command_arguments[2]), int(command_arguments[3]))
         board.move_entity(from_position, to_position)
         board.print_board()
 
-    def place_command_slow(board: Board):
+    def place_command_slow(board: Board) -> None:
         pass
 
     def place_command(board: Board, command_arguments: list[str]) -> None:
-        assert len(command_arguments) == 5, f"place command expected 5 arguments ({len(command_arguments)} were given)"
-        entity_type: str = command_arguments[0].lower()
-        entity_character: str = command_arguments[1]
-        entity_hp: int = int(command_arguments[2])
-        position: tuple[int, int] = (int(command_arguments[3]), int(command_arguments[4]))
-        entity: Entity
-        if entity_type == "player":
-            entity = Playable_Character(entity_character, entity_hp)
-        elif entity_type == "enemy":
-            entity = Enemy(entity_character, entity_hp)
-        else:
-            assert False, "unknowned place entity type"
-        board.place_entity(entity, position)
+        assert len(command_arguments) == 3 or len(command_arguments) == 0,\
+            f"place command expected 0 or 3 arguments ({len(command_arguments)} were given)"
+        if len(command_arguments) == 0:
+            return Command_Parser.place_command_slow(board)
+        entity_id: int = int(command_arguments[0])
+        position: tuple[int, int] = (int(command_arguments[1]), int(command_arguments[2]))
+        board.place_entity(Game_Inventory.get_entity(entity_id), position)
         board.print_board()
 
-    def info_command_slow(board: Board):
+    def info_command_slow(board: Board) -> None:
         pass
 
     def info_command(board: Board, command_arguments: list[str]) -> None:
-        assert len(command_arguments) == 2, f"? command expected 2 arguments ({len(command_arguments)} were given)"
+        assert len(command_arguments) == 2 or len(command_arguments) == 0,\
+            f"? command expected 0 or 2 arguments ({len(command_arguments)} were given)"
+        if len(command_arguments) == 0:
+            return Command_Parser.info_command_slow(board)
         position: tuple[int, int] = (int(command_arguments[0]), int(command_arguments[1]))    
         print(board.get_info(position))
 
-    def attack_command_slow(board: Board):
+    def attack_command_slow(board: Board) -> None:
         pass
 
     def attack_command(board: Board, command_arguments: list[str]) -> None:
-        if len(command_arguments) == 4:
+        assert len(command_arguments) == 4 or len(command_arguments) == 0,\
+              f"attack command expected 0 or 4 arguments ({len(command_arguments)} were given)"
+        if len(command_arguments) == 0:
             return Command_Parser.attack_command_slow(board)
-        assert len(command_arguments) == 4, f"attack command expected 4 arguments ({len(command_arguments)} were given)"
         attacker_position: tuple[int, int] = (int(command_arguments[0]), int(command_arguments[1]))
         target_position: tuple[int, int] = (int(command_arguments[2]), int(command_arguments[3]))
         board.attack(attacker_position, target_position)
@@ -154,7 +208,7 @@ class Command_Parser:
         pass
 
     def create_command(command_arguments: list[str]) -> None:
-        assert len(command_arguments) > 0,  f"create command expected atleast 1 argument ({len(command_arguments)} were given)"
+        assert len(command_arguments) > 0, f"create command expected at least 1 argument ({len(command_arguments)} were given)"
         create_type: str = command_arguments[0].lower()
         if create_type == "entity":
             assert len(command_arguments) == 4, f"create entity command expected 4 arguments ({len(command_arguments)} were given)"
@@ -168,14 +222,19 @@ class Command_Parser:
                 entity = Enemy(entity_character, entity_hp)
             Game_Inventory.add_entity(entity)
         elif create_type == "item":
-            assert len(command_arguments) == 3, f"create item command expected 3 arguments ({len(command_arguments)} were given)"
+            assert len(command_arguments) > 1, f"create item command expected at least 2 arguments ({len(command_arguments)} were given)"
             item_type: str = command_arguments[1].lower()
-            item_name: str = command_arguments[2]
             item: Item
             if item_type == "weapon":
-                item = Weapon(item_name)
+                assert len(command_arguments) == 5, f"create item weapon command expected 5 arguments ({len(command_arguments)} were given)"
+                item_name: str = command_arguments[2]
+                item_damage: int = int(command_arguments[3])
+                item_range: int = int(command_arguments[4])
+                item = Weapon(item_name, item_damage, item_range)
             elif item_type == "armor":
-                pass
+                assert len(command_arguments) == 3, f"create item armor command expected 3 arguments ({len(command_arguments)} were given)"
+                item_name: str = command_arguments[2]
+                item = Armor(item_name)
             Game_Inventory.add_item(item)
         else:
             assert False, "create command: unknown create type"
@@ -185,29 +244,60 @@ class Command_Parser:
         Game_Inventory.print_all_entities()
 
     def items_command(command_arguments: list[str]) -> None:
-        assert len(command_arguments) == 0, f"items command expected 0 arguments ({len(command_arguments)} were given)"
-        Game_Inventory.print_all_items()
+        assert len(command_arguments) == 1 or len(command_arguments) == 0,\
+              f"items command expected 0 or 1 arguments ({len(command_arguments)} were given)"
+        if len(command_arguments) == 0:
+            return Game_Inventory.print_all_items()
+        index: int = int(command_arguments[0])
+        entity: Entity = Game_Inventory.get_entity(index)
+        assert isinstance(entity, Playable_Character), "item command must select a playable character"
+        print(entity.get_items())
 
-    def help_command():
+    def give_command_slow() -> None:
+        pass
+
+    def give_command(command_arguments: list[str]) -> None:
+        assert len(command_arguments) == 2 or len(command_arguments) == 0, f"give command expected 0 or 2 arguments ({len(command_arguments)} were given)"
+        entity_id: int = int(command_arguments[0])
+        entity: Entity = Game_Inventory.get_entity(entity_id)
+        assert isinstance(entity, Playable_Character), "give command must select a playable character"
+        item_id: int = int(command_arguments[1])
+        item: Item = Game_Inventory.get_item(item_id)
+        entity.add_item(item)
+
+    def give_command_slow() -> None:
+        pass
+
+    def equip_command(command_arguments: list[str]) -> None:
+        assert len(command_arguments) == 2 or len(command_arguments) == 0, f"equip command expected 0 or 2 arguments ({len(command_arguments)} were given)"
+        entity_id: int = int(command_arguments[0])
+        entity: Entity = Game_Inventory.get_entity(entity_id)
+        assert isinstance(entity, Playable_Character), "equip command must select a playable character"
+        item_index: int = int(command_arguments[1])
+        entity.equip_item(item_index)
+
+    def help_command(command_arguments: list[str]) -> None:
         print("""Available Commands:
               \tattack from_position_x from_position_y to_position_x to_position_x
               \t? position_x position_y
               \tmove from_position_x from_position_y to_position_x to_position_y
-              \tplace type chatacter hp position_x position_y
+              \tplace entity_id position_x position_y
               \tcreate entity type character hp
               \tcreate item type name
               \tentities
-              \titems
+              \titems [entity_id]
+              \tgive entity_id item_id
+              \tequip entity_id item_index
               \thelp""")
 
     def pass_command(board: Board, command: str) -> None:
         if command == "":
             return
-        if command == "help":
-            Command_Parser.help_command()
         command_arguments: list[str] = [item for item in command.split(" ") if item != ""]
         command_type: str = command_arguments[0].lower()
-        if command_type == "move":
+        if command_type == "help":
+            Command_Parser.help_command(command_arguments[1:])
+        elif command_type == "move":
             Command_Parser.move_command(board, command_arguments[1:])
         elif command_type == "place":
             Command_Parser.place_command(board, command_arguments[1:])
@@ -221,6 +311,10 @@ class Command_Parser:
             Command_Parser.entities_command(command_arguments[1:])
         elif command_type == "items":
             Command_Parser.items_command(command_arguments[1:])
+        elif command_type == "give":
+            Command_Parser.give_command(command_arguments[1:])
+        elif command_type == "equip":
+            Command_Parser.equip_command(command_arguments[1:])
         else:
             assert False, "unknowned command"
 
@@ -254,12 +348,12 @@ class Game_Inventory:
     def print_all_entities() -> None:
         print("Entities:")
         for id, entity in Game_Inventory.entities.items():
-            print(f"\tEntity \"{id}\": {entity}")
+            print(f"\tEntity \"{id}\": {{{entity}}}")
 
     def print_all_items() -> None:
         print("Items:")
         for id, item in Game_Inventory.items.items():
-            print(f"\tEntity \"{id}\": {item}")
+            print(f"\tEntity \"{id}\": {{{item}}}")
 
     def print_all() -> None:
         Game_Inventory.print_all_entities()
