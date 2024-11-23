@@ -1,3 +1,5 @@
+import sys
+
 class Entity:
     def __init__(self, character: str = " ", hp: int = 0):
         self.hp: int = hp
@@ -320,8 +322,6 @@ class Command_Parser:
         elif command_type == "equip":
             Command_Parser.equip_command(command_arguments[1:])
         else:
-            for letter in command_type:
-                print(1, letter)
             assert False, f"unknowned command: {command_type}"
 
 def distance(from_position: tuple[int, int], to_position: tuple[int, int]) -> int:
@@ -366,12 +366,25 @@ class Game_Inventory:
         Game_Inventory.print_all_items()
 
 def main():
-    with open("python_files/test_input.txt", "r") as file:
-        board: Board = Board(size=9)
-        for line in file:
+    args: list[str] = sys.argv
+    board: Board = Board(size=9)
+    if len(args) == 2:
+        with open(args[1], "r") as file:
+            for line in file:
+                try:
+                    Command_Parser.pass_command(board, line)
+                except AssertionError as e:
+                    print(e)
+    elif len(args) == 1:
+        board.print_board()
+        input_str: str = ""
+        while input_str != "stop":
             try:
-                Command_Parser.pass_command(board, line)
+                Command_Parser.pass_command(board, input_str)
             except AssertionError as e:
                 print(e)
+            input_str = input()
+    else:
+        print(f"expected 1 or 2 arguements ({len(args)} were given)")
 
 main()
