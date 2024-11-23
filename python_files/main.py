@@ -163,8 +163,8 @@ class Board_Command_Parser:
     def move_command(board: Board, command_arguments: list[str]) -> None:
         assert len(command_arguments) == 4 or len(command_arguments) == 0,\
             f"move command expected 0 or 4 arguments ({len(command_arguments)} were given)"
-        from_position: tuple[int, int]
-        to_position: tuple[int, int]
+        from_position: tuple[int, int] = (0, 0)
+        to_position: tuple[int, int] = (0, 0)
         if len(command_arguments) == 0:
             from_position = Input_Arguemnts.get_position("Please enter the position to move from:")
             to_position = Input_Arguemnts.get_position("Please enter the position to move to:")
@@ -176,8 +176,8 @@ class Board_Command_Parser:
     def place_command(board: Board, command_arguments: list[str]) -> None:
         assert len(command_arguments) == 3 or len(command_arguments) == 0,\
             f"place command expected 0 or 3 arguments ({len(command_arguments)} were given)"
-        entity_id: int
-        position: tuple[int, int]
+        entity_id: int = 0
+        position: tuple[int, int] = (0, 0)
         if len(command_arguments) == 0:
             entity_id = Input_Arguemnts.get_int("Please enter the entity id to place:")
             position = Input_Arguemnts.get_position("Please enter the position to place in:")
@@ -189,7 +189,7 @@ class Board_Command_Parser:
     def info_command(board: Board, command_arguments: list[str]) -> None:
         assert len(command_arguments) == 2 or len(command_arguments) == 0,\
             f"? command expected 0 or 2 arguments ({len(command_arguments)} were given)"
-        position: tuple[int, int]
+        position: tuple[int, int] = (0, 0)
         if len(command_arguments) == 0:
             position = Input_Arguemnts.get_position("Please enter the position for which you want the information:")
         if len(command_arguments) == 2:
@@ -199,8 +199,8 @@ class Board_Command_Parser:
     def attack_command(board: Board, command_arguments: list[str]) -> None:
         assert len(command_arguments) == 4 or len(command_arguments) == 0,\
               f"attack command expected 0 or 4 arguments ({len(command_arguments)} were given)"
-        attacker_position: tuple[int, int]
-        target_position: tuple[int, int]
+        attacker_position: tuple[int, int] = (0, 0)
+        target_position: tuple[int, int] = (0, 0)
         if len(command_arguments) == 0:
             attacker_position = Input_Arguemnts.get_position("Please enter the position from which to attack:")
             target_position = Input_Arguemnts.get_position("Please enter the position to which to attack:")
@@ -293,20 +293,21 @@ class Game_Command_Parser:
     def items_command(command_arguments: list[str]) -> None:
         assert len(command_arguments) == 1 or len(command_arguments) == 0,\
               f"items command expected 0 or 1 arguments ({len(command_arguments)} were given)"
-        if len(command_arguments) == 0 and Input_Arguemnts.get_boolean("Do you want the information of all items? (y/n)"):
+        if len(command_arguments) == 0:
             return Game_Inventory.print_all_items()
-        entity_id: int
+        entity_id: int = 0
         if len(command_arguments) == 0:
             entity_id = Input_Arguemnts.get_int("Please enter the entity id to which toy want to print the items:")
-        entity_id = int(command_arguments[0])
+        if len(command_arguments) == 1:
+            entity_id = int(command_arguments[0])
         entity: Entity = Game_Inventory.get_entity(entity_id)
         assert isinstance(entity, Playable_Character), "item command must select a playable character"
         print(entity.get_items())
 
     def give_command(command_arguments: list[str]) -> None:
         assert len(command_arguments) == 2 or len(command_arguments) == 0, f"give command expected 0 or 2 arguments ({len(command_arguments)} were given)"
-        entity_id: int
-        item_id: Item
+        entity_id: int = 0
+        item_id: Item = None
         if len(command_arguments) == 0:
             entity_id = Input_Arguemnts.get_int("Please enter the entity id to which you give the item:")
             item_id = Input_Arguemnts.get_int("Please enter the item id which you want to give:")
@@ -320,8 +321,8 @@ class Game_Command_Parser:
 
     def equip_command(command_arguments: list[str]) -> None:
         assert len(command_arguments) == 2 or len(command_arguments) == 0, f"equip command expected 0 or 2 arguments ({len(command_arguments)} were given)"
-        entity_id: int
-        item_index: int
+        entity_id: int = 0
+        item_index: int = 0
         if len(command_arguments) == 0:
             entity_id = Input_Arguemnts.get_int("Please enter the entity id to equip:")
             item_index = Input_Arguemnts.get_int("Please enter the item index to equip:")
@@ -394,26 +395,32 @@ class Input_Arguemnts:
         input_str: str = input().lower()
         return bool(input_str == "yes" or input_str == "y")
 
-def main():
-    args: list[str] = sys.argv
+def run_file(filename: str):
     board: Board = Board(size=9)
-    if len(args) == 2:
-        with open(args[1], "r") as file:
-            for line in file:
-                try:
-                    Command_Parser.pass_command(board, line)
-                except AssertionError as e:
-                    print(e)
-    elif len(args) == 1:
-        board.print_board()
-        input_str: str = ""
-        while input_str != "stop":
+    with open(filename, "r") as file:
+        for line in file:
             try:
-                Command_Parser.pass_command(board, input_str)
+                Command_Parser.pass_command(board, line)
             except AssertionError as e:
                 print(e)
-            input_str = input()
+
+def run_std_in():
+    board: Board = Board(size=9)
+    board.print_board()
+    input_str: str = ""
+    while input_str != "stop":
+        try:
+            Command_Parser.pass_command(board, input_str)
+        except AssertionError as e:
+            print(e)
+        input_str = input()
+
+def main():
+    if len(sys.argv) == 2:
+        run_file(sys.argv[1])
+    elif len(sys.argv) == 1:
+        run_std_in()
     else:
-        print(f"expected 1 or 2 arguements ({len(args)} were given)")
+        print(f"expected 1 or 2 arguements ({len(sys.argv)} were given)")
 
 main()
