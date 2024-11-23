@@ -1,5 +1,8 @@
 import sys
 
+def distance(from_position: tuple[int, int], to_position: tuple[int, int]) -> int:
+    return abs(from_position[0] - to_position[0]) + abs(from_position[1] - to_position[1])
+
 class Entity:
     def __init__(self, character: str = " ", hp: int = 0):
         self.hp: int = hp
@@ -156,54 +159,98 @@ class Board:
         assert(target_position in self.position_dict.keys()), "Target position must contain an entity"
         self.position_dict[attacker_position].attack(self.position_dict[target_position], distance(attacker_position, target_position))
 
-class Command_Parser:
-    def move_command_slow(board: Board) -> None:
-        pass
-
+class Board_Command_Parser:
     def move_command(board: Board, command_arguments: list[str]) -> None:
         assert len(command_arguments) == 4 or len(command_arguments) == 0,\
             f"move command expected 0 or 4 arguments ({len(command_arguments)} were given)"
+        from_position: tuple[int, int]
+        to_position: tuple[int, int]
         if len(command_arguments) == 0:
-            return Command_Parser.move_command_slow(board)
-        from_position: tuple[int, int] = (int(command_arguments[0]), int(command_arguments[1]))
-        to_position: tuple[int, int] = (int(command_arguments[2]), int(command_arguments[3]))
+            from_position = Input_Arguemnts.get_position("Please enter the position to move from:")
+            to_position = Input_Arguemnts.get_position("Please enter the position to move to:")
+        if len(command_arguments) == 4:
+            from_position = (int(command_arguments[0]), int(command_arguments[1]))
+            to_position = (int(command_arguments[2]), int(command_arguments[3]))
         board.move_entity(from_position, to_position)
-
-    def place_command_slow(board: Board) -> None:
-        pass
 
     def place_command(board: Board, command_arguments: list[str]) -> None:
         assert len(command_arguments) == 3 or len(command_arguments) == 0,\
             f"place command expected 0 or 3 arguments ({len(command_arguments)} were given)"
+        entity_id: int
+        position: tuple[int, int]
         if len(command_arguments) == 0:
-            return Command_Parser.place_command_slow(board)
-        entity_id: int = int(command_arguments[0])
-        position: tuple[int, int] = (int(command_arguments[1]), int(command_arguments[2]))
+            entity_id = Input_Arguemnts.get_int("Please enter the entity id to place:")
+            position = Input_Arguemnts.get_position("Please enter the position to place in:")
+        if len(command_arguments) == 4:
+            entity_id = int(command_arguments[0])
+            position = (int(command_arguments[1]), int(command_arguments[2]))
         board.place_entity(Game_Inventory.get_entity(entity_id), position)
-
-    def info_command_slow(board: Board) -> None:
-        pass
 
     def info_command(board: Board, command_arguments: list[str]) -> None:
         assert len(command_arguments) == 2 or len(command_arguments) == 0,\
             f"? command expected 0 or 2 arguments ({len(command_arguments)} were given)"
+        position: tuple[int, int]
         if len(command_arguments) == 0:
-            return Command_Parser.info_command_slow(board)
-        position: tuple[int, int] = (int(command_arguments[0]), int(command_arguments[1]))    
+            position = Input_Arguemnts.get_position("Please enter the position for which you want the information:")
+        if len(command_arguments) == 2:
+            position = (int(command_arguments[0]), int(command_arguments[1]))    
         print(board.get_info(position))
-
-    def attack_command_slow(board: Board) -> None:
-        pass
 
     def attack_command(board: Board, command_arguments: list[str]) -> None:
         assert len(command_arguments) == 4 or len(command_arguments) == 0,\
               f"attack command expected 0 or 4 arguments ({len(command_arguments)} were given)"
+        attacker_position: tuple[int, int]
+        target_position: tuple[int, int]
         if len(command_arguments) == 0:
-            return Command_Parser.attack_command_slow(board)
-        attacker_position: tuple[int, int] = (int(command_arguments[0]), int(command_arguments[1]))
-        target_position: tuple[int, int] = (int(command_arguments[2]), int(command_arguments[3]))
+            attacker_position = Input_Arguemnts.get_position("Please enter the position from which to attack:")
+            target_position = Input_Arguemnts.get_position("Please enter the position to which to attack:")
+        if len(command_arguments) == 4:
+            attacker_position = (int(command_arguments[0]), int(command_arguments[1]))
+            target_position = (int(command_arguments[2]), int(command_arguments[3]))
         board.attack(attacker_position, target_position)
 
+    def print_command(board: Board, command_arguments: list[str]) -> None:
+        board.print_board()
+
+class Game_Inventory:
+    entities: dict[int, Entity] = {}
+    items: dict[int, Item] = {}
+    
+    def add_entity(entity: Entity) -> None:
+        assert entity not in Game_Inventory.entities.values(), "Cannot add entity that already exist"
+        Game_Inventory.entities[len(Game_Inventory.entities)] = entity
+
+    def add_item(item: Item) -> None:
+        assert item not in Game_Inventory.items.values(), "Cannot add item that already exist"
+        Game_Inventory.items[len(Game_Inventory.items)] = item
+
+    def get_entity(id: int) -> Entity:
+        assert id in Game_Inventory.entities.keys(), "Entity id not found"
+        return Game_Inventory.entities[id]
+    
+    def get_item(id: int) -> Item:
+        assert id in Game_Inventory.items.keys(), "Item id not found"
+        return Game_Inventory.items[id]
+
+    def get(type:str, id:int) -> Item | Entity:
+        if type.lower() == "entity": return Game_Inventory.get_entity(id)
+        if type.lower() == "item": return Game_Inventory.get_item(id)
+
+    def print_all_entities() -> None:
+        print("Entities:")
+        for id, entity in Game_Inventory.entities.items():
+            print(f"\tEntity \"{id}\": {{{entity}}}")
+
+    def print_all_items() -> None:
+        print("Items:")
+        for id, item in Game_Inventory.items.items():
+            print(f"\tEntity \"{id}\": {{{item}}}")
+
+    def print_all() -> None:
+        Game_Inventory.print_all_entities()
+        Game_Inventory.print_all_items()
+
+class Game_Command_Parser:
     def create_command_slow() -> None:
         pass
 
@@ -246,39 +293,46 @@ class Command_Parser:
     def items_command(command_arguments: list[str]) -> None:
         assert len(command_arguments) == 1 or len(command_arguments) == 0,\
               f"items command expected 0 or 1 arguments ({len(command_arguments)} were given)"
-        if len(command_arguments) == 0:
+        if len(command_arguments) == 0 and Input_Arguemnts.get_boolean("Do you want the information of all items? (y/n)"):
             return Game_Inventory.print_all_items()
-        index: int = int(command_arguments[0])
-        entity: Entity = Game_Inventory.get_entity(index)
+        entity_id: int
+        if len(command_arguments) == 0:
+            entity_id = Input_Arguemnts.get_int("Please enter the entity id to which toy want to print the items:")
+        entity_id = int(command_arguments[0])
+        entity: Entity = Game_Inventory.get_entity(entity_id)
         assert isinstance(entity, Playable_Character), "item command must select a playable character"
         print(entity.get_items())
 
-    def give_command_slow() -> None:
-        pass
-
     def give_command(command_arguments: list[str]) -> None:
         assert len(command_arguments) == 2 or len(command_arguments) == 0, f"give command expected 0 or 2 arguments ({len(command_arguments)} were given)"
-        entity_id: int = int(command_arguments[0])
+        entity_id: int
+        item_id: Item
+        if len(command_arguments) == 0:
+            entity_id = Input_Arguemnts.get_int("Please enter the entity id to which you give the item:")
+            item_id = Input_Arguemnts.get_int("Please enter the item id which you want to give:")
+        if len(command_arguments) == 2:
+            entity_id = int(command_arguments[0])
+            item_id = int(command_arguments[1])
         entity: Entity = Game_Inventory.get_entity(entity_id)
         assert isinstance(entity, Playable_Character), "give command must select a playable character"
-        item_id: int = int(command_arguments[1])
         item: Item = Game_Inventory.get_item(item_id)
         entity.add_item(item)
 
-    def give_command_slow() -> None:
-        pass
-
     def equip_command(command_arguments: list[str]) -> None:
         assert len(command_arguments) == 2 or len(command_arguments) == 0, f"equip command expected 0 or 2 arguments ({len(command_arguments)} were given)"
-        entity_id: int = int(command_arguments[0])
+        entity_id: int
+        item_index: int
+        if len(command_arguments) == 0:
+            entity_id = Input_Arguemnts.get_int("Please enter the entity id to equip:")
+            item_index = Input_Arguemnts.get_int("Please enter the item index to equip:")
+        if len(command_arguments) == 2:
+            entity_id = int(command_arguments[0])
+            item_index: int = int(command_arguments[1])
         entity: Entity = Game_Inventory.get_entity(entity_id)
         assert isinstance(entity, Playable_Character), "equip command must select a playable character"
-        item_index: int = int(command_arguments[1])
         entity.equip_item(item_index)
 
-    def print_command(board: Board, command_arguments: list[str]) -> None:
-        board.print_board()
-
+class Command_Parser:
     def help_command(command_arguments: list[str]) -> None:
         print("""Available Commands:
               \tattack from_position_x from_position_y to_position_x to_position_x
@@ -302,68 +356,43 @@ class Command_Parser:
         if command_type == "help":
             Command_Parser.help_command(command_arguments[1:])
         elif command_type == "move":
-            Command_Parser.move_command(board, command_arguments[1:])
+            Board_Command_Parser.move_command(board, command_arguments[1:])
         elif command_type == "place":
-            Command_Parser.place_command(board, command_arguments[1:])
+            Board_Command_Parser.place_command(board, command_arguments[1:])
         elif command_type == "?":
-            Command_Parser.info_command(board, command_arguments[1:])
+            Board_Command_Parser.info_command(board, command_arguments[1:])
         elif command_type == "attack":
-            Command_Parser.attack_command(board, command_arguments[1:])
+            Board_Command_Parser.attack_command(board, command_arguments[1:])
         elif command_type == "print":
-            Command_Parser.print_command(board, command_arguments[1:])
+            Board_Command_Parser.print_command(board, command_arguments[1:])
         elif command_type == "create":
-            Command_Parser.create_command(command_arguments[1:])
+            Game_Command_Parser.create_command(command_arguments[1:])
         elif command_type == "entities":
-            Command_Parser.entities_command(command_arguments[1:])
+            Game_Command_Parser.entities_command(command_arguments[1:])
         elif command_type == "items":
-            Command_Parser.items_command(command_arguments[1:])
+            Game_Command_Parser.items_command(command_arguments[1:])
         elif command_type == "give":
-            Command_Parser.give_command(command_arguments[1:])
+            Game_Command_Parser.give_command(command_arguments[1:])
         elif command_type == "equip":
-            Command_Parser.equip_command(command_arguments[1:])
+            Game_Command_Parser.equip_command(command_arguments[1:])
         else:
             assert False, f"unknowned command: {command_type}"
 
-def distance(from_position: tuple[int, int], to_position: tuple[int, int]) -> int:
-    return abs(from_position[0] - to_position[0]) + abs(from_position[1] - to_position[1])
-
-class Game_Inventory:
-    entities: dict[int, Entity] = {}
-    items: dict[int, Item] = {}
-    
-    def add_entity(entity: Entity) -> None:
-        assert entity not in Game_Inventory.entities.values(), "Cannot add entity that already exist"
-        Game_Inventory.entities[len(Game_Inventory.entities)] = entity
-
-    def add_item(item: Item) -> None:
-        assert item not in Game_Inventory.items.values(), "Cannot add item that already exist"
-        Game_Inventory.items[len(Game_Inventory.items)] = item
-
-    def get_entity(id: int) -> Entity:
-        assert id in Game_Inventory.entities.keys(), "Entity id not found"
-        return Game_Inventory.entities[id]
-    
-    def get_item(id: int) -> Item:
-        assert id in Game_Inventory.items.keys(), "Item id not found"
-        return Game_Inventory.items[id]
-
-    def get(type:str, id:int) -> Item | Entity:
-        if type.lower() == "entity": return Game_Inventory.get_entity(id)
-        if type.lower() == "item": return Game_Inventory.get_item(id)
-
-    def print_all_entities() -> None:
-        print("Entities:")
-        for id, entity in Game_Inventory.entities.items():
-            print(f"\tEntity \"{id}\": {{{entity}}}")
-
-    def print_all_items() -> None:
-        print("Items:")
-        for id, item in Game_Inventory.items.items():
-            print(f"\tEntity \"{id}\": {{{item}}}")
-
-    def print_all() -> None:
-        Game_Inventory.print_all_entities()
-        Game_Inventory.print_all_items()
+class Input_Arguemnts:
+    def get_int(message: str) -> int:
+        print(message)
+        return int(input())
+    def get_position(message: str) -> tuple[int, int]:
+        print(message)
+        input_str: str = input().lower()
+        return (int(input_str[0]), int(input_str[1]))
+    def get_string(message: str) -> str:
+        print(message)
+        return input()
+    def get_boolean(message: str) -> bool:
+        print(message)
+        input_str: str = input().lower()
+        return bool(input_str == "yes" or input_str == "y")
 
 def main():
     args: list[str] = sys.argv
