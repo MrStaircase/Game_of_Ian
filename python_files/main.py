@@ -32,7 +32,7 @@ class Enemy(Entity):
         self.armor: int = armor
     
     def __str__(self) -> str:
-        return "enemy: " + super().__str__()
+        return f"enemy: {super().__str__()}, damage: {self.damage}, armor: {self.armor}"
     
     def attack(self, target: Entity, distance: int) -> None:
         assert isinstance(target, Entity), "Target must be an entity"
@@ -50,7 +50,7 @@ class Playable_Character(Entity):
         self.selected_armor: Armor = Armor()
 
     def __str__(self) -> str:
-        return f"playable_character: {super().__str__()}, selected {self.selected_weapon}"
+        return f"playable_character: {super().__str__()}, selected {self.selected_weapon}, selected {self.selected_armor}"
     
     def add_item(self, item: "Item") -> None:
         self.items.append(item)
@@ -95,25 +95,25 @@ class Item:
         return self.name
 
 class Weapon(Item):
-    def __init__(self, name="weapon", damage = 1, range = 1):
+    def __init__(self, name="none", damage = 1, range = 1):
         assert range >= 0, "Weapons range must be non-negative"
         super().__init__(name)
         self.damage: int = damage
         self.range: int = range
     
     def __str__(self):
-        return f"weapon: {super().__str__()}, damage: {self.damage}, range: {self.range}"
+        return f"weapon: {{{super().__str__()}, damage: {self.damage}, range: {self.range}}}"
 
     def get_stats(self) -> tuple[int, int]:
         return self.damage, self.range
 
 class Armor(Item):
-    def __init__(self, name="armor", armor_rating = 0):
+    def __init__(self, name="none", armor_rating = 0):
         super().__init__(name)
         self.armor_rating: int = armor_rating
     
-    def __str__(self):
-        return f"armor: {super().__str__()}, armor rating: {self.armor_rating}"
+    def __str__(self) -> str:
+        return f"armor: {{{super().__str__()}, armor rating: {self.armor_rating}}}"
 
     def get_stats(self) -> int:
         return self.armor_rating
@@ -181,7 +181,7 @@ class Board_Command_Parser:
         if len(command_arguments) == 0:
             entity_id = Input_Arguemnts.get_int("Please enter the entity id to place:")
             position = Input_Arguemnts.get_position("Please enter the position to place in:")
-        if len(command_arguments) == 4:
+        if len(command_arguments) == 3:
             entity_id = int(command_arguments[0])
             position = (int(command_arguments[1]), int(command_arguments[2]))
         board.place_entity(Game_Inventory.get_entity(entity_id), position)
@@ -279,9 +279,10 @@ class Game_Command_Parser:
                 item_range: int = int(command_arguments[4])
                 item = Weapon(item_name, item_damage, item_range)
             elif item_type == "armor":
-                assert len(command_arguments) == 3, f"create item armor command expected 3 arguments ({len(command_arguments)} were given)"
+                assert len(command_arguments) == 4, f"create item armor command expected 4 arguments ({len(command_arguments)} were given)"
                 item_name: str = command_arguments[2]
-                item = Armor(item_name)
+                armor_rating: int = int(command_arguments[3])
+                item = Armor(item_name, armor_rating)
             Game_Inventory.add_item(item)
         else:
             assert False, "create command: unknown create type"
