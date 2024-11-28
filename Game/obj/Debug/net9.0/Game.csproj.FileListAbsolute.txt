@@ -1,0 +1,15 @@
+C:\Games\Game of Ian\Game_of_Ian\Game\bin\Debug\net9.0\Game.exe
+C:\Games\Game of Ian\Game_of_Ian\Game\bin\Debug\net9.0\Game.deps.json
+C:\Games\Game of Ian\Game_of_Ian\Game\bin\Debug\net9.0\Game.runtimeconfig.json
+C:\Games\Game of Ian\Game_of_Ian\Game\bin\Debug\net9.0\Game.dll
+C:\Games\Game of Ian\Game_of_Ian\Game\bin\Debug\net9.0\Game.pdb
+C:\Games\Game of Ian\Game_of_Ian\Game\obj\Debug\net9.0\Game.GeneratedMSBuildEditorConfig.editorconfig
+C:\Games\Game of Ian\Game_of_Ian\Game\obj\Debug\net9.0\Game.AssemblyInfoInputs.cache
+C:\Games\Game of Ian\Game_of_Ian\Game\obj\Debug\net9.0\Game.AssemblyInfo.cs
+C:\Games\Game of Ian\Game_of_Ian\Game\obj\Debug\net9.0\Game.csproj.CoreCompileInputs.cache
+C:\Games\Game of Ian\Game_of_Ian\Game\obj\Debug\net9.0\Game.sourcelink.json
+C:\Games\Game of Ian\Game_of_Ian\Game\obj\Debug\net9.0\Game.dll
+C:\Games\Game of Ian\Game_of_Ian\Game\obj\Debug\net9.0\refint\Game.dll
+C:\Games\Game of Ian\Game_of_Ian\Game\obj\Debug\net9.0\Game.pdb
+C:\Games\Game of Ian\Game_of_Ian\Game\obj\Debug\net9.0\Game.genruntimeconfig.cache
+C:\Games\Game of Ian\Game_of_Ian\Game\obj\Debug\net9.0\ref\Game.dll

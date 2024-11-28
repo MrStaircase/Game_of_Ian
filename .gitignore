@@ -1,2 +1,5 @@
 test_input.txt
 test_output.txt
+settings.json
+Game.sln
+.editorconfig
