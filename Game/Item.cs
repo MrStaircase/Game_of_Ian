@@ -3,7 +3,7 @@ namespace Game{
         public string name { get; private set; } = name;
 
         public override string ToString(){
-            return "";
+            return name;
         }
     }
 
@@ -14,7 +14,7 @@ namespace Game{
         public Weapon() : this("Fists", 1, 1) { }
 
         public override string ToString(){
-            return "";
+            return $"weapon: {{ {base.ToString()}, damage: {damage}, range: {range} }}";
         }
     }
 
@@ -22,5 +22,10 @@ namespace Game{
         public int rating {get; private set;} = rating;
 
         public Armor() : this ("Naked", 0) { }
+
+        public override string ToString()
+        {
+            return $"armor: {{ {base.ToString()}, armor rating: {rating} }}";
+        }
     }
 }
