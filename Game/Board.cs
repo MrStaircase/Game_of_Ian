@@ -47,9 +47,13 @@ namespace Game{
         }
     }
 
-    public class Board(int size){
-        public int size {get;} = size;
-        public Dictionary<Vector2, Entity> position_dict {get;} = [];
+    public class Board{
+        public int size {get;}
+        public Dictionary<Vector2, Entity> position_dict {get;} = new();
+
+        public Board(int size){
+            this.size = size;
+        }
 
         public void print_board(){
             string row_separator = "-";
@@ -96,9 +100,11 @@ namespace Game{
         }
     }
 
-    public class Game_Inventory(){
-        public Dictionary<int, Entity> entities {get; private set;} = [];
-        public Dictionary<int, Item> items {get; private set;} = [];
+    public class Game_Inventory{
+        public Dictionary<int, Entity> entities {get; private set;} = new();
+        public Dictionary<int, Item> items {get; private set;} = new();
+
+        public Game_Inventory() { }
 
         public void add(object obj){
             if(obj is Entity entity)
@@ -106,23 +112,21 @@ namespace Game{
             else if(obj is Item item)
                 items.Add(items.Count, item);
             else
-                throw new ArgumentException("Object is not an Entity nor Item");
+                throw new ArgumentException("Object is not an Entity nor an Item");
         }
 
         public void print_all_entities(TextWriter? writer = null){
-            if(writer == null)
-                writer = Console.Out;
+            writer ??= Console.Out;
             writer.WriteLine("entities:");
-            foreach (KeyValuePair<int, Entity> entry in entities.ToArray()){
+            foreach (KeyValuePair<int, Entity> entry in entities){
                 writer.WriteLine($"\t{entry.Key}: {{ {entry.Value} }}");
             }
         }
 
         public void print_all_items(TextWriter? writer = null){
-            if(writer == null)
-                writer = Console.Out;
+            writer ??= Console.Out;
             writer.WriteLine("items:");
-            foreach (KeyValuePair<int, Item> entry in items.ToArray()){
+            foreach (KeyValuePair<int, Item> entry in items){
                 writer.WriteLine($"\t{entry.Key}: {{ {entry.Value} }}");
             }
         }

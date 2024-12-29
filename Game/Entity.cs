@@ -1,9 +1,14 @@
 namespace Game{
-    public abstract class Entity(char character, int hp){
-        public char character { get; private set; } = character;
-        public int hp { get; private set; } = hp;
+    public abstract class Entity{
+        public char character { get; private set; }
+        public int hp { get; private set; }
 
         public abstract int armor {get;}
+
+        public Entity(char character, int hp){
+            this.character = character;
+            this.hp = hp;
+        }
 
         public override string ToString(){
             return $"{character}, hp: {hp}";
@@ -17,10 +22,15 @@ namespace Game{
         public abstract void attack(Entity target, int distance);
     }
 
-    public sealed class Enemy(char character, int hp, int damage, int armor) : Entity (character, hp){
-        public int damage {get; private set;} = damage;
-        private int _armor {get; set;} = armor;
+    public sealed class Enemy : Entity{
+        public int damage {get; private set;}
+        private int _armor {get; set;}
         public override int armor {get => _armor;}
+
+        public Enemy(char character, int hp, int damage, int armor) : base(character, hp){
+            this.damage = damage;
+            this._armor = armor;
+        }
 
         public override string ToString(){
             return $"enemy: {base.ToString()}, damage: {damage}, armor: {armor}";
@@ -35,12 +45,14 @@ namespace Game{
         }
     }
 
-    public sealed class Ally(char character, int hp) : Entity(character, hp) {
+    public sealed class Ally : Entity{
         public override int armor {get => selected_armor.rating;}
         public string role {get; private set;} = "fighter";
-        public List<Item> items {get; private set;} = [new Weapon(), new Armor()];
+        public List<Item> items {get; private set;} = new(){ new Weapon(), new Armor() };
         public Weapon selected_weapon {get; private set;} = new Weapon();
         public Armor selected_armor {get; private set;} = new Armor();
+
+        public Ally(char character, int hp) : base(character, hp) { }
 
         public override string ToString(){
             return $"ally: {base.ToString()}, selected {selected_weapon}, selected {selected_armor}";
@@ -52,7 +64,7 @@ namespace Game{
 
         public void equip_item(int index){
             if(index >= items.Count || index < 0){
-                throw new IndexOutOfRangeException("item chosen out of range");
+                throw new IndexOutOfRangeException($"item chosen ({index}) out of range ({items.Count})");
             }
             else if(items[index] is Weapon weapon){
                 selected_weapon = weapon;
